@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>思维导图</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="app">
+        <!-- 工具栏 -->
+        <div class="toolbar">
+            <div class="toolbar-group">
+                <button id="add-node-btn" class="toolbar-btn">
+                    <span>添加节点</span>
+                </button>
+                <button id="delete-node-btn" class="toolbar-btn">
+                    <span>删除</span>
+                </button>
+            </div>
+            <div class="toolbar-group">
+                <button id="zoom-in-btn" class="toolbar-btn">
+                    <span>放大</span>
+                </button>
+                <button id="zoom-out-btn" class="toolbar-btn">
+                    <span>缩小</span>
+                </button>
+                <button id="reset-zoom-btn" class="toolbar-btn">
+                    <span>重置</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 思维导图画布容器 -->
+        <div id="canvas-container">
+            <svg id="mindmap-svg" width="100%" height="100%">
+                <!-- 连接线将在这里绘制 -->
+                <g id="connections-layer"></g>
+                <!-- 节点将在这里绘制 -->
+                <g id="nodes-layer"></g>
+            </svg>
+        </div>
+    </div>
+
+    <script src="mindmap.js"></script>
+</body>
+</html>

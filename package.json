@@ -1,0 +1,34 @@
+{
+  "name": "mindmap-electron",
+  "version": "1.0.0",
+  "description": "一个使用Electron开发的思维导图应用",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --reload",
+    "build": "electron-builder",
+    "pack": "electron-builder --dir"
+  },
+  "keywords": [
+    "mindmap",
+    "electron",
+    "思维导图"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.4"
+  },
+  "build": {
+    "appId": "com.mindmap.electron",
+    "productName": "MindMap",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "node_modules/**/*"
+    ]
+  }
+}

@@ -1,0 +1,233 @@
+/* Mac风格配色和设计 */
+:root {
+  /* Mac系统配色 */
+  --primary-bg: #f5f5f7;
+  --secondary-bg: #ffffff;
+  --tertiary-bg: #f2f2f7;
+  --border-color: #d1d1d6;
+  --text-primary: #1d1d1f;
+  --text-secondary: #6e6e73;
+  --accent-blue: #007aff;
+  --accent-blue-hover: #0056cc;
+  --shadow: rgba(0, 0, 0, 0.1);
+  --shadow-hover: rgba(0, 0, 0, 0.2);
+  
+  /* 节点配色 */
+  --node-bg: #ffffff;
+  --node-border: #d1d1d6;
+  --node-text: #1d1d1f;
+  --node-selected: #007aff;
+  --connection-color: #8e8e93;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background-color: var(--primary-bg);
+  color: var(--text-primary);
+  overflow: hidden;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* 工具栏样式 */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  background-color: var(--secondary-bg);
+  border-bottom: 1px solid var(--border-color);
+  box-shadow: 0 1px 3px var(--shadow);
+  z-index: 100;
+}
+
+.toolbar-group {
+  display: flex;
+  gap: 8px;
+}
+
+.toolbar-btn {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  background-color: var(--tertiary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  -webkit-app-region: no-drag;
+}
+
+.toolbar-btn:hover {
+  background-color: var(--accent-blue);
+  color: white;
+  border-color: var(--accent-blue);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 6px var(--shadow-hover);
+}
+
+.toolbar-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 3px var(--shadow);
+}
+
+/* 画布容器 */
+#canvas-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background-color: var(--primary-bg);
+  background-image: 
+    radial-gradient(circle, var(--border-color) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+#mindmap-svg {
+  display: block;
+  cursor: grab;
+  user-select: none;
+}
+
+#mindmap-svg.dragging {
+  cursor: grabbing;
+}
+
+/* 节点样式 */
+.mindmap-node {
+  cursor: move;
+  transition: all 0.2s ease;
+}
+
+.mindmap-node:hover .node-bg {
+  stroke: var(--accent-blue);
+  stroke-width: 2;
+  filter: drop-shadow(0 4px 8px var(--shadow-hover));
+}
+
+.mindmap-node.selected .node-bg {
+  stroke: var(--node-selected);
+  stroke-width: 2;
+  filter: drop-shadow(0 4px 12px rgba(0, 122, 255, 0.3));
+}
+
+.node-bg {
+  fill: var(--node-bg);
+  stroke: var(--node-border);
+  stroke-width: 1;
+  filter: drop-shadow(0 2px 4px var(--shadow));
+  transition: all 0.2s ease;
+}
+
+.node-text {
+  fill: var(--node-text);
+  text-anchor: middle;
+  dominant-baseline: central;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  pointer-events: none;
+}
+
+.node-input {
+  position: absolute;
+  border: none;
+  background: transparent;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  color: var(--text-primary);
+  outline: none;
+  z-index: 1000;
+}
+
+/* 连接线样式 */
+.connection-line {
+  fill: none;
+  stroke: var(--connection-color);
+  stroke-width: 2;
+  stroke-linecap: round;
+  opacity: 0.8;
+  transition: all 0.2s ease;
+}
+
+.connection-line:hover {
+  stroke: var(--accent-blue);
+  stroke-width: 3;
+  opacity: 1;
+}
+
+/* 连接点样式 */
+.connection-point {
+  fill: var(--accent-blue);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.mindmap-node:hover .connection-point {
+  opacity: 1;
+}
+
+/* 工具提示 */
+.tooltip {
+  position: absolute;
+  background-color: var(--text-primary);
+  color: var(--secondary-bg);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.tooltip.show {
+  opacity: 1;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .toolbar {
+    padding: 8px 12px;
+  }
+  
+  .toolbar-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}
+
+/* 滚动条样式 (Webkit) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--tertiary-bg);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
