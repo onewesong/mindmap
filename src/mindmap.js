@@ -137,7 +137,10 @@ class MindMap {
                 e.preventDefault();
                 if (this.selectedNode) {
                     // Enter键用于编辑当前节点
-                    this.editSelectedNode();
+                    const nodeGroup = document.querySelector(`[data-node-id="${this.selectedNode.id}"]`);
+                    if (nodeGroup) {
+                        this.editNodeText(nodeGroup, this.selectedNode);
+                    }
                 }
             } else if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
                 e.preventDefault();
