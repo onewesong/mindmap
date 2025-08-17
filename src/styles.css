@@ -658,14 +658,21 @@ body {
   cursor: pointer;
 }
 
+.leaf-node .node-bg {
+  stroke-dasharray: 3, 3; /* 虚线边框标识叶子节点 */
+}
+
 .leaf-node .node-text {
   font-style: italic;
-  opacity: 0.9;
 }
 
 .leaf-node:hover .node-text {
   opacity: 1;
   font-weight: 500 !important;
+}
+
+.leaf-node:hover .node-bg {
+  stroke-dasharray: none; /* 悬停时恢复实线 */
 }
 
 /* 根节点特殊样式 */

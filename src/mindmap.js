@@ -531,15 +531,26 @@ class MindMap {
             const line = document.querySelector(`[data-connection-id="${connection.id}"]`);
 
             if (parentNode && childNode && line) {
+                // 计算连接点位置 - 从节点边缘到节点边缘
+                const parentHalfWidth = (parentNode.width || 120) / 2;
+                const childHalfWidth = (childNode.width || 120) / 2;
+                
+                // 起点：父节点右边缘
+                const startX = parentNode.x + parentHalfWidth;
+                const startY = parentNode.y;
+                
+                // 终点：子节点左边缘
+                const endX = childNode.x - childHalfWidth;
+                const endY = childNode.y;
+                
                 // 使用贝塞尔曲线创建平滑连接
-                const dx = childNode.x - parentNode.x;
-                const dy = childNode.y - parentNode.y;
-                const controlOffset = Math.abs(dx) * 0.3;
+                const dx = endX - startX;
+                const controlOffset = Math.abs(dx) * 0.4;
 
-                const path = `M ${parentNode.x} ${parentNode.y} 
-                             C ${parentNode.x + controlOffset} ${parentNode.y}, 
-                               ${childNode.x - controlOffset} ${childNode.y}, 
-                               ${childNode.x} ${childNode.y}`;
+                const path = `M ${startX} ${startY} 
+                             C ${startX + controlOffset} ${startY}, 
+                               ${endX - controlOffset} ${endY}, 
+                               ${endX} ${endY}`;
                 
                 line.setAttribute('d', path);
             }
@@ -736,14 +747,16 @@ class MindMap {
         text.setAttribute('font-size', fontSize);
         text.setAttribute('font-weight', fontWeight);
         
-        // 叶子节点特殊处理
+        // 叶子节点特殊处理（保持正常背景，避免连线问题）
         if (isLeafNode && level > 0) {
-            rect.style.opacity = '0.3';
+            rect.style.opacity = '0.8'; // 轻微透明但不影响连线
             text.style.fontStyle = 'italic';
+            text.style.opacity = '0.9';
             nodeGroup.classList.add('leaf-node');
         } else {
             rect.style.opacity = '1';
             text.style.fontStyle = 'normal';
+            text.style.opacity = '1';
             nodeGroup.classList.remove('leaf-node');
         }
         
