@@ -688,6 +688,31 @@ body {
   transition: all 0.2s ease;
 }
 
+/* 折叠指示器样式 */
+.collapse-indicator {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.collapse-indicator:hover {
+  transform: scale(1.1);
+  filter: drop-shadow(0 2px 4px var(--shadow-hover));
+}
+
+.collapse-symbol {
+  cursor: pointer;
+  pointer-events: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.mindmap-node:hover .collapse-indicator {
+  opacity: 1;
+}
+
+.mindmap-node .collapse-indicator {
+  opacity: 0.8;
+}
+
 /* 滚动条样式 (Webkit) */
 ::-webkit-scrollbar {
   width: 8px;

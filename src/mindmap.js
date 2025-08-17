@@ -150,6 +150,11 @@ class MindMap {
                 this.redo();
             } else if (e.key === 'Escape') {
                 this.hideContextMenu();
+            } else if (e.key === ' ' || e.key === 'Spacebar') {
+                e.preventDefault();
+                if (this.selectedNode) {
+                    this.toggleNodeCollapse(this.selectedNode);
+                }
             }
         });
 
@@ -304,7 +309,8 @@ class MindMap {
             height: 40,
             children: [],
             parent: null,
-            color: color
+            color: color,
+            collapsed: false // 折叠状态
         };
 
         // 创建SVG节点组
@@ -334,6 +340,30 @@ class MindMap {
         connectionPoint.setAttribute('cx', nodeData.width);
         connectionPoint.setAttribute('cy', nodeData.height / 2);
         connectionPoint.setAttribute('r', 4);
+        
+        // 创建折叠展开指示器
+        const collapseIndicator = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        collapseIndicator.classList.add('collapse-indicator');
+        collapseIndicator.setAttribute('cx', nodeData.width);
+        collapseIndicator.setAttribute('cy', nodeData.height / 2);
+        collapseIndicator.setAttribute('r', 8);
+        collapseIndicator.setAttribute('fill', 'var(--accent-blue)');
+        collapseIndicator.setAttribute('stroke', 'white');
+        collapseIndicator.setAttribute('stroke-width', '2');
+        collapseIndicator.style.display = 'none'; // 默认隐藏
+        
+        // 创建折叠指示符号
+        const collapseSymbol = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        collapseSymbol.classList.add('collapse-symbol');
+        collapseSymbol.setAttribute('x', nodeData.width);
+        collapseSymbol.setAttribute('y', nodeData.height / 2);
+        collapseSymbol.setAttribute('text-anchor', 'middle');
+        collapseSymbol.setAttribute('dominant-baseline', 'central');
+        collapseSymbol.setAttribute('font-size', '10');
+        collapseSymbol.setAttribute('font-weight', 'bold');
+        collapseSymbol.setAttribute('fill', 'white');
+        collapseSymbol.textContent = '-';
+        collapseSymbol.style.display = 'none'; // 默认隐藏
 
         nodeGroup.appendChild(rect);
         nodeGroup.appendChild(textElement);
@@ -343,7 +373,7 @@ class MindMap {
         this.nodesLayer.appendChild(nodeGroup);
 
         // 添加事件监听器
-        this.setupNodeEventListeners(nodeGroup, nodeData);
+        this.setupNodeEventListeners(nodeGroup, nodeData, collapseIndicator, collapseSymbol);
 
         this.nodes.set(nodeId, nodeData);
         return nodeData;
@@ -353,7 +383,7 @@ class MindMap {
         nodeGroup.setAttribute('transform', `translate(${nodeData.x - nodeData.width / 2}, ${nodeData.y - nodeData.height / 2})`);
     }
 
-    setupNodeEventListeners(nodeGroup, nodeData) {
+    setupNodeEventListeners(nodeGroup, nodeData, collapseIndicator, collapseSymbol) {
         let isDragging = false;
         let dragStart = { x: 0, y: 0 };
 
@@ -405,6 +435,17 @@ class MindMap {
             e.stopPropagation();
             this.selectNode(nodeData);
             this.showContextMenu(e.clientX, e.clientY, nodeData);
+        });
+        
+        // 折叠指示器点击事件
+        collapseIndicator.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleNodeCollapse(nodeData);
+        });
+        
+        collapseSymbol.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleNodeCollapse(nodeData);
         });
     }
 
@@ -770,6 +811,19 @@ class MindMap {
             connectionPoint.setAttribute('cy', height / 2);
         }
         
+        // 更新折叠指示器位置
+        const collapseIndicator = nodeGroup.querySelector('.collapse-indicator');
+        const collapseSymbol = nodeGroup.querySelector('.collapse-symbol');
+        if (collapseIndicator && collapseSymbol) {
+            collapseIndicator.setAttribute('cx', width);
+            collapseIndicator.setAttribute('cy', height / 2);
+            collapseSymbol.setAttribute('x', width);
+            collapseSymbol.setAttribute('y', height / 2);
+        }
+        
+        // 更新折叠指示器显示状态
+        this.updateCollapseIndicator(nodeData);
+        
         // 重新定位节点
         this.updateNodePosition(nodeGroup, nodeData);
     }
@@ -779,6 +833,8 @@ class MindMap {
         this.nodes.forEach(nodeData => {
             this.updateNodeStyle(nodeData);
         });
+        // 更新节点可见性（处理折叠状态）
+        this.updateNodeVisibility();
         // 更新连接线
         this.updateConnections();
     }
@@ -1020,6 +1076,13 @@ class MindMap {
             this.hideContextMenu();
             this.deleteSelectedNode();
         });
+        
+        document.getElementById('menu-toggle-collapse').addEventListener('click', () => {
+            this.hideContextMenu();
+            if (this.selectedNode) {
+                this.toggleNodeCollapse(this.selectedNode);
+            }
+        });
     }
     
     showContextMenu(x, y, nodeData) {
@@ -1069,6 +1132,108 @@ class MindMap {
         }
     }
 
+    // 展开折叠功能
+    toggleNodeCollapse(nodeData) {
+        if (!nodeData.children || nodeData.children.length === 0) {
+            return; // 没有子节点的节点不能折叠
+        }
+        
+        nodeData.collapsed = !nodeData.collapsed;
+        
+        this.updateCollapseIndicator(nodeData);
+        this.updateNodeVisibility();
+        this.updateConnections();
+        
+        // 保存状态
+        this.saveState();
+    }
+    
+    updateCollapseIndicator(nodeData) {
+        const nodeGroup = document.querySelector(`[data-node-id="${nodeData.id}"]`);
+        if (!nodeGroup) return;
+        
+        const collapseIndicator = nodeGroup.querySelector('.collapse-indicator');
+        const collapseSymbol = nodeGroup.querySelector('.collapse-symbol');
+        
+        if (!collapseIndicator || !collapseSymbol) return;
+        
+        // 有子节点才显示折叠指示器
+        if (nodeData.children && nodeData.children.length > 0) {
+            collapseIndicator.style.display = 'block';
+            collapseSymbol.style.display = 'block';
+            
+            // 更新符号：- 表示展开，+ 表示折叠
+            collapseSymbol.textContent = nodeData.collapsed ? '+' : '-';
+        } else {
+            collapseIndicator.style.display = 'none';
+            collapseSymbol.style.display = 'none';
+        }
+    }
+    
+    updateNodeVisibility() {
+        // 重置所有节点为可见
+        this.nodes.forEach(nodeData => {
+            const nodeGroup = document.querySelector(`[data-node-id="${nodeData.id}"]`);
+            if (nodeGroup) {
+                nodeGroup.style.display = 'block';
+            }
+        });
+        
+        // 隐藏折叠节点的子树
+        this.nodes.forEach(nodeData => {
+            if (nodeData.collapsed) {
+                this.hideNodeSubtree(nodeData);
+            }
+        });
+        
+        // 更新连接线的可见性
+        this.connections.forEach(connection => {
+            const line = document.querySelector(`[data-connection-id="${connection.id}"]`);
+            const parentNode = this.nodes.get(connection.parent);
+            const childNode = this.nodes.get(connection.child);
+            
+            if (line && parentNode && childNode) {
+                const parentVisible = this.isNodeVisible(parentNode);
+                const childVisible = this.isNodeVisible(childNode);
+                
+                // 只有当父子节点都可见且父节点未折叠时连线才可见
+                const parentCollapsed = parentNode.collapsed && parentNode.children.includes(connection.child);
+                line.style.display = (parentVisible && childVisible && !parentCollapsed) ? 'block' : 'none';
+            }
+        });
+    }
+    
+    hideNodeSubtree(nodeData) {
+        if (!nodeData.children) return;
+        
+        nodeData.children.forEach(childId => {
+            const childNode = this.nodes.get(childId);
+            if (childNode) {
+                const nodeGroup = document.querySelector(`[data-node-id="${childId}"]`);
+                if (nodeGroup) {
+                    nodeGroup.style.display = 'none';
+                }
+                // 递归隐藏子节点的子树
+                this.hideNodeSubtree(childNode);
+            }
+        });
+    }
+    
+    isNodeVisible(nodeData) {
+        // 检查节点的所有祖先是否都处于展开状态
+        let current = nodeData;
+        while (current.parent) {
+            const parent = this.nodes.get(current.parent);
+            if (!parent) break;
+            
+            if (parent.collapsed) {
+                return false;
+            }
+            current = parent;
+        }
+        return true;
+    }
+    
     // 数据序列化
     exportData() {
         const data = {
@@ -1079,7 +1244,8 @@ class MindMap {
                 text: node.text,
                 children: node.children,
                 parent: node.parent,
-                color: node.color
+                color: node.color,
+                collapsed: node.collapsed
             })),
             connections: this.connections,
             scale: this.scale,
