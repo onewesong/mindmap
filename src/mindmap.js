@@ -55,11 +55,22 @@ class MindMap {
 
         // 键盘事件
         document.addEventListener('keydown', (e) => {
+            // 如果当前有输入框在编辑，不处理快捷键
+            if (document.querySelector('.node-input')) {
+                return;
+            }
+            
             if (e.key === 'Delete' || e.key === 'Backspace') {
                 this.deleteSelectedNode();
-            } else if (e.key === 'Tab' || e.key === 'Enter') {
+            } else if (e.key === 'Tab') {
                 e.preventDefault();
                 this.addChildNode();
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (this.selectedNode) {
+                    // Enter键用于编辑当前节点
+                    this.editSelectedNode();
+                }
             }
         });
 
@@ -329,6 +340,7 @@ class MindMap {
 
         input.addEventListener('blur', finishEdit);
         input.addEventListener('keydown', (e) => {
+            e.stopPropagation(); // 阻止事件冒泡，避免触发全局快捷键
             if (e.key === 'Enter') {
                 finishEdit();
             } else if (e.key === 'Escape') {
