@@ -1,6 +1,6 @@
-/* Mac风格配色和设计 */
+/* 主题配色系统 */
 :root {
-  /* Mac系统配色 */
+  /* 默认主题 - Mac Light */
   --primary-bg: #f5f5f7;
   --secondary-bg: #ffffff;
   --tertiary-bg: #f2f2f7;
@@ -18,6 +18,106 @@
   --node-text: #1d1d1f;
   --node-selected: #007aff;
   --connection-color: #8e8e93;
+}
+
+/* Mac Dark 主题 */
+[data-theme="mac-dark"] {
+  --primary-bg: #1c1c1e;
+  --secondary-bg: #2c2c2e;
+  --tertiary-bg: #3a3a3c;
+  --border-color: #48484a;
+  --text-primary: #ffffff;
+  --text-secondary: #aeaeb2;
+  --accent-blue: #0a84ff;
+  --accent-blue-hover: #0056cc;
+  --shadow: rgba(0, 0, 0, 0.3);
+  --shadow-hover: rgba(0, 0, 0, 0.5);
+  
+  --node-bg: #2c2c2e;
+  --node-border: #48484a;
+  --node-text: #ffffff;
+  --node-selected: #0a84ff;
+  --connection-color: #aeaeb2;
+}
+
+/* 温暖橙色主题 */
+[data-theme="warm-orange"] {
+  --primary-bg: #fef7f0;
+  --secondary-bg: #ffffff;
+  --tertiary-bg: #fef2e8;
+  --border-color: #e8d5c4;
+  --text-primary: #5c2e04;
+  --text-secondary: #8b4513;
+  --accent-blue: #ff8c00;
+  --accent-blue-hover: #e07600;
+  --shadow: rgba(255, 140, 0, 0.1);
+  --shadow-hover: rgba(255, 140, 0, 0.2);
+  
+  --node-bg: #ffffff;
+  --node-border: #e8d5c4;
+  --node-text: #5c2e04;
+  --node-selected: #ff8c00;
+  --connection-color: #cd853f;
+}
+
+/* 清新绿色主题 */
+[data-theme="fresh-green"] {
+  --primary-bg: #f0f8f0;
+  --secondary-bg: #ffffff;
+  --tertiary-bg: #e8f5e8;
+  --border-color: #c4e8c4;
+  --text-primary: #2e5c2e;
+  --text-secondary: #4a7c4a;
+  --accent-blue: #32cd32;
+  --accent-blue-hover: #228b22;
+  --shadow: rgba(50, 205, 50, 0.1);
+  --shadow-hover: rgba(50, 205, 50, 0.2);
+  
+  --node-bg: #ffffff;
+  --node-border: #c4e8c4;
+  --node-text: #2e5c2e;
+  --node-selected: #32cd32;
+  --connection-color: #8fbc8f;
+}
+
+/* 深海蓝色主题 */
+[data-theme="deep-blue"] {
+  --primary-bg: #0f1419;
+  --secondary-bg: #1a2332;
+  --tertiary-bg: #253347;
+  --border-color: #3d4f66;
+  --text-primary: #e1e8f0;
+  --text-secondary: #a0aec0;
+  --accent-blue: #4299e1;
+  --accent-blue-hover: #2b77cb;
+  --shadow: rgba(66, 153, 225, 0.2);
+  --shadow-hover: rgba(66, 153, 225, 0.3);
+  
+  --node-bg: #1a2332;
+  --node-border: #3d4f66;
+  --node-text: #e1e8f0;
+  --node-selected: #4299e1;
+  --connection-color: #718096;
+}
+
+/* 优雅紫色主题 */
+[data-theme="elegant-purple"] {
+  --primary-bg: #faf7ff;
+  --secondary-bg: #ffffff;
+  --tertiary-bg: #f3f0ff;
+  --border-color: #d6d1e8;
+  --text-primary: #4a1d7a;
+  --text-secondary: #6b46c1;
+  --accent-blue: #8b5cf6;
+  --accent-blue-hover: #7c3aed;
+  --shadow: rgba(139, 92, 246, 0.1);
+  --shadow-hover: rgba(139, 92, 246, 0.2);
+  
+  --node-bg: #ffffff;
+  --node-border: #d6d1e8;
+  --node-text: #4a1d7a;
+  --node-selected: #8b5cf6;
+  --connection-color: #a78bfa;
 }
 
 * {
@@ -200,15 +300,151 @@ body {
   opacity: 1;
 }
 
+/* 主题选择器样式 */
+.theme-selector-container {
+  position: relative;
+  display: inline-block;
+}
+
+.theme-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: var(--secondary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px var(--shadow-hover);
+  min-width: 180px;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.theme-dropdown.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.theme-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  margin: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.theme-option:hover {
+  background-color: var(--tertiary-bg);
+  transform: translateX(2px);
+}
+
+.theme-option.active {
+  background-color: var(--accent-blue);
+  color: white;
+}
+
+.theme-preview {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.theme-preview::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 50%;
+  height: 100%;
+}
+
+.theme-preview::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 50%;
+  height: 100%;
+}
+
+/* 主题预览颜色 */
+.mac-light-preview {
+  background: linear-gradient(45deg, #f5f5f7 50%, #007aff 50%);
+}
+
+.mac-dark-preview {
+  background: linear-gradient(45deg, #1c1c1e 50%, #0a84ff 50%);
+}
+
+.warm-orange-preview {
+  background: linear-gradient(45deg, #fef7f0 50%, #ff8c00 50%);
+}
+
+.fresh-green-preview {
+  background: linear-gradient(45deg, #f0f8f0 50%, #32cd32 50%);
+}
+
+.deep-blue-preview {
+  background: linear-gradient(45deg, #0f1419 50%, #4299e1 50%);
+}
+
+.elegant-purple-preview {
+  background: linear-gradient(45deg, #faf7ff 50%, #8b5cf6 50%);
+}
+
+.theme-btn {
+  position: relative;
+}
+
+.theme-btn::after {
+  content: '';
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid currentColor;
+  transition: transform 0.2s ease;
+}
+
+.theme-btn.active::after {
+  transform: translateY(-50%) rotate(180deg);
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .toolbar {
     padding: 8px 12px;
+    flex-wrap: wrap;
+    gap: 8px;
   }
   
   .toolbar-btn {
     padding: 6px 12px;
     font-size: 12px;
+  }
+  
+  .theme-dropdown {
+    right: auto;
+    left: 0;
+    min-width: 160px;
   }
 }
 

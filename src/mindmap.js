@@ -19,6 +19,7 @@ class MindMap {
 
     init() {
         this.setupEventListeners();
+        this.setupThemeSystem();
         this.createRootNode();
     }
 
@@ -66,6 +67,74 @@ class MindMap {
             e.preventDefault();
             const delta = e.deltaY > 0 ? 0.9 : 1.1;
             this.zoom(delta, e.clientX, e.clientY);
+        });
+    }
+
+    setupThemeSystem() {
+        const themeBtn = document.getElementById('theme-selector-btn');
+        const themeDropdown = document.getElementById('theme-dropdown');
+        const themeOptions = document.querySelectorAll('.theme-option');
+        
+        // 从本地存储加载主题
+        const savedTheme = localStorage.getItem('mindmap-theme') || 'mac-light';
+        this.applyTheme(savedTheme);
+        this.updateActiveTheme(savedTheme);
+        
+        // 主题按钮点击事件
+        themeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isShow = themeDropdown.classList.contains('show');
+            this.closeAllDropdowns();
+            
+            if (!isShow) {
+                themeDropdown.classList.add('show');
+                themeBtn.classList.add('active');
+            }
+        });
+        
+        // 主题选项点击事件
+        themeOptions.forEach(option => {
+            option.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const theme = option.getAttribute('data-theme');
+                this.applyTheme(theme);
+                this.updateActiveTheme(theme);
+                localStorage.setItem('mindmap-theme', theme);
+                this.closeAllDropdowns();
+            });
+        });
+        
+        // 点击外部关闭下拉菜单
+        document.addEventListener('click', () => {
+            this.closeAllDropdowns();
+        });
+    }
+    
+    applyTheme(theme) {
+        // 移除所有主题类
+        document.body.removeAttribute('data-theme');
+        
+        // 应用新主题
+        if (theme !== 'mac-light') {
+            document.body.setAttribute('data-theme', theme);
+        }
+    }
+    
+    updateActiveTheme(activeTheme) {
+        document.querySelectorAll('.theme-option').forEach(option => {
+            option.classList.remove('active');
+            if (option.getAttribute('data-theme') === activeTheme) {
+                option.classList.add('active');
+            }
+        });
+    }
+    
+    closeAllDropdowns() {
+        document.querySelectorAll('.theme-dropdown').forEach(dropdown => {
+            dropdown.classList.remove('show');
+        });
+        document.querySelectorAll('.theme-btn').forEach(btn => {
+            btn.classList.remove('active');
         });
     }
 
@@ -402,7 +471,8 @@ class MindMap {
             connections: this.connections,
             scale: this.scale,
             panX: this.panX,
-            panY: this.panY
+            panY: this.panY,
+            theme: document.body.getAttribute('data-theme') || 'mac-light'
         };
         return JSON.stringify(data, null, 2);
     }
@@ -437,6 +507,13 @@ class MindMap {
             if (data.panX !== undefined) this.panX = data.panX;
             if (data.panY !== undefined) this.panY = data.panY;
             this.updateTransform();
+            
+            // 恢复主题
+            if (data.theme) {
+                this.applyTheme(data.theme);
+                this.updateActiveTheme(data.theme);
+                localStorage.setItem('mindmap-theme', data.theme);
+            }
             
         } catch (error) {
             console.error('导入数据失败:', error);
