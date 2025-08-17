@@ -14,6 +14,11 @@ class MindMap {
         this.panX = 0;
         this.panY = 0;
         
+        // 历史记录系统
+        this.history = [];
+        this.historyIndex = -1;
+        this.maxHistorySize = 50;
+        
         this.init();
     }
 
@@ -45,6 +50,14 @@ class MindMap {
         document.getElementById('reset-zoom-btn').addEventListener('click', () => {
             this.resetView();
         });
+        
+        document.getElementById('undo-btn').addEventListener('click', () => {
+            this.undo();
+        });
+        
+        document.getElementById('redo-btn').addEventListener('click', () => {
+            this.redo();
+        });
 
         // SVG画布事件
         this.svg.addEventListener('click', (e) => {
@@ -71,6 +84,12 @@ class MindMap {
                     // Enter键用于编辑当前节点
                     this.editSelectedNode();
                 }
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+                e.preventDefault();
+                this.undo();
+            } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
+                e.preventDefault();
+                this.redo();
             }
         });
 
@@ -116,6 +135,8 @@ class MindMap {
                 if (this.selectedNode) {
                     this.setNodeColor(this.selectedNode, color);
                     this.updateActiveColor();
+                    // 保存状态
+                    this.saveState();
                 }
                 
                 this.closeAllDropdowns();
@@ -197,6 +218,8 @@ class MindMap {
     createRootNode() {
         const node = this.createNode(400, 300, '中心主题', 'default');
         this.selectNode(node);
+        // 保存初始状态
+        this.saveState();
     }
 
     createNode(x, y, text = '新节点', color = null) {
@@ -333,8 +356,15 @@ class MindMap {
 
         const finishEdit = () => {
             const newText = input.value.trim() || '新节点';
-            nodeData.text = newText;
-            textElement.textContent = newText;
+            const oldText = nodeData.text;
+            
+            if (newText !== oldText) {
+                nodeData.text = newText;
+                textElement.textContent = newText;
+                // 保存状态（仅在文本实际改变时）
+                this.saveState();
+            }
+            
             document.body.removeChild(input);
         };
 
@@ -400,6 +430,9 @@ class MindMap {
         this.updateNodeStyle(parentNode);
         
         this.selectNode(childNode);
+        
+        // 保存状态
+        this.saveState();
     }
 
     createConnection(parentId, childId) {
@@ -479,6 +512,9 @@ class MindMap {
         
         // 更新所有节点样式（删除节点后层级可能发生变化）
         this.updateAllNodeStyles();
+        
+        // 保存状态
+        this.saveState();
     }
 
     deleteNodeById(nodeId) {
@@ -583,6 +619,155 @@ class MindMap {
                 option.classList.add('active');
             }
         });
+    }
+    
+    // 历史记录系统
+    saveState() {
+        const currentState = {
+            nodes: Array.from(this.nodes.entries()).map(([id, node]) => ({
+                id,
+                x: node.x,
+                y: node.y,
+                text: node.text,
+                children: [...node.children],
+                parent: node.parent,
+                color: node.color
+            })),
+            connections: [...this.connections],
+            selectedNodeId: this.selectedNode ? this.selectedNode.id : null
+        };
+        
+        // 移除当前索引之后的历史记录
+        this.history = this.history.slice(0, this.historyIndex + 1);
+        
+        // 添加新状态
+        this.history.push(JSON.parse(JSON.stringify(currentState)));
+        this.historyIndex++;
+        
+        // 限制历史记录大小
+        if (this.history.length > this.maxHistorySize) {
+            this.history.shift();
+            this.historyIndex--;
+        }
+        
+        // 更新按钮状态
+        this.updateHistoryButtons();
+    }
+    
+    undo() {
+        if (this.historyIndex > 0) {
+            this.historyIndex--;
+            this.restoreState(this.history[this.historyIndex]);
+            this.updateHistoryButtons();
+        }
+    }
+    
+    redo() {
+        if (this.historyIndex < this.history.length - 1) {
+            this.historyIndex++;
+            this.restoreState(this.history[this.historyIndex]);
+            this.updateHistoryButtons();
+        }
+    }
+    
+    restoreState(state) {
+        // 清空现有数据
+        this.nodes.clear();
+        this.connections = [];
+        this.nodesLayer.innerHTML = '';
+        this.connectionsLayer.innerHTML = '';
+        this.selectedNode = null;
+        
+        // 重建节点
+        state.nodes.forEach(nodeData => {
+            const node = this.createNodeFromData(nodeData);
+            this.nodes.set(nodeData.id, node);
+        });
+        
+        // 重建连接
+        state.connections.forEach(connection => {
+            this.createConnection(connection.parent, connection.child);
+        });
+        
+        // 恢复选中状态
+        if (state.selectedNodeId && this.nodes.has(state.selectedNodeId)) {
+            this.selectNode(this.nodes.get(state.selectedNodeId));
+        }
+        
+        // 更新所有节点样式
+        this.updateAllNodeStyles();
+    }
+    
+    createNodeFromData(nodeData) {
+        const nodeId = nodeData.id;
+        
+        // 创建节点数据
+        const newNodeData = {
+            id: nodeId,
+            x: nodeData.x,
+            y: nodeData.y,
+            text: nodeData.text,
+            width: 120,
+            height: 40,
+            children: [...nodeData.children],
+            parent: nodeData.parent,
+            color: nodeData.color || 'default'
+        };
+
+        // 创建SVG节点组
+        const nodeGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        nodeGroup.classList.add('mindmap-node');
+        nodeGroup.classList.add(`node-color-${newNodeData.color}`);
+        nodeGroup.setAttribute('data-node-id', nodeId);
+
+        // 创建半圆角矩形背景
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.classList.add('node-bg');
+        rect.setAttribute('width', newNodeData.width);
+        rect.setAttribute('height', newNodeData.height);
+        rect.setAttribute('rx', 12);
+        rect.setAttribute('ry', 12);
+
+        // 创建文本
+        const textElement = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        textElement.classList.add('node-text');
+        textElement.setAttribute('x', newNodeData.width / 2);
+        textElement.setAttribute('y', newNodeData.height / 2);
+        textElement.textContent = nodeData.text;
+
+        // 创建连接点
+        const connectionPoint = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        connectionPoint.classList.add('connection-point');
+        connectionPoint.setAttribute('cx', newNodeData.width);
+        connectionPoint.setAttribute('cy', newNodeData.height / 2);
+        connectionPoint.setAttribute('r', 4);
+
+        nodeGroup.appendChild(rect);
+        nodeGroup.appendChild(textElement);
+        nodeGroup.appendChild(connectionPoint);
+
+        // 添加事件监听器
+        this.setupNodeEventListeners(nodeGroup, newNodeData);
+
+        this.updateNodePosition(nodeGroup, newNodeData);
+        this.nodesLayer.appendChild(nodeGroup);
+
+        return newNodeData;
+    }
+    
+    updateHistoryButtons() {
+        const undoBtn = document.getElementById('undo-btn');
+        const redoBtn = document.getElementById('redo-btn');
+        
+        if (undoBtn) {
+            undoBtn.disabled = this.historyIndex <= 0;
+            undoBtn.style.opacity = undoBtn.disabled ? '0.5' : '1';
+        }
+        
+        if (redoBtn) {
+            redoBtn.disabled = this.historyIndex >= this.history.length - 1;
+            redoBtn.style.opacity = redoBtn.disabled ? '0.5' : '1';
+        }
     }
 
     // 数据序列化
