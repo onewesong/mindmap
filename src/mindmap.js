@@ -895,6 +895,9 @@ class MindMap {
     
     // 历史记录系统
     saveState() {
+        // 防止在撤销/重做过程中保存状态
+        if (this._isRestoringState) return;
+        
         const currentState = {
             nodes: Array.from(this.nodes.entries()).map(([id, node]) => ({
                 id,
@@ -903,13 +906,22 @@ class MindMap {
                 text: node.text,
                 children: [...node.children],
                 parent: node.parent,
-                color: node.color
+                color: node.color,
+                collapsed: node.collapsed
             })),
             connections: [...this.connections],
             selectedNodeId: this.selectedNode ? this.selectedNode.id : null
         };
         
-        // 移除当前索引之后的历史记录
+        // 检查是否与上一个状态相同，避免重复保存
+        if (this.history.length > 0) {
+            const lastState = this.history[this.historyIndex];
+            if (JSON.stringify(currentState) === JSON.stringify(lastState)) {
+                return; // 状态没有变化，不保存
+            }
+        }
+        
+        // 移除当前索引之后的历史记录（用于分支历史）
         this.history = this.history.slice(0, this.historyIndex + 1);
         
         // 添加新状态
@@ -924,10 +936,21 @@ class MindMap {
         
         // 更新按钮状态
         this.updateHistoryButtons();
+        
+        console.log(`保存状态: 历史记录${this.history.length}个，当前索引${this.historyIndex}`);
     }
     
     undo() {
         if (this.historyIndex > 0) {
+            // 检查撤销后是否还有节点
+            const targetState = this.history[this.historyIndex - 1];
+            
+            // 如果撤销会导致没有节点，则拒绝撤销
+            if (!targetState || !targetState.nodes || targetState.nodes.length === 0) {
+                console.log('撤销被阻止：不能删除所有节点');
+                return;
+            }
+            
             this.historyIndex--;
             this.restoreState(this.history[this.historyIndex]);
             this.updateHistoryButtons();
@@ -943,31 +966,49 @@ class MindMap {
     }
     
     restoreState(state) {
-        // 清空现有数据
-        this.nodes.clear();
-        this.connections = [];
-        this.nodesLayer.innerHTML = '';
-        this.connectionsLayer.innerHTML = '';
-        this.selectedNode = null;
+        // 设置标志避免在恢复过程中保存状态
+        this._isRestoringState = true;
         
-        // 重建节点
-        state.nodes.forEach(nodeData => {
-            const node = this.createNodeFromData(nodeData);
-            this.nodes.set(nodeData.id, node);
-        });
-        
-        // 重建连接
-        state.connections.forEach(connection => {
-            this.createConnection(connection.parent, connection.child);
-        });
-        
-        // 恢复选中状态
-        if (state.selectedNodeId && this.nodes.has(state.selectedNodeId)) {
-            this.selectNode(this.nodes.get(state.selectedNodeId));
+        try {
+            // 清空现有数据
+            this.nodes.clear();
+            this.connections = [];
+            this.nodesLayer.innerHTML = '';
+            this.connectionsLayer.innerHTML = '';
+            this.selectedNode = null;
+            
+            // 重建节点
+            state.nodes.forEach(nodeData => {
+                const node = this.createNodeFromData(nodeData);
+                this.nodes.set(nodeData.id, node);
+            });
+            
+            // 重建连接
+            state.connections.forEach(connection => {
+                this.createConnection(connection.parent, connection.child);
+            });
+            
+            // 恢复选中状态
+            if (state.selectedNodeId && this.nodes.has(state.selectedNodeId)) {
+                this.selectNode(this.nodes.get(state.selectedNodeId));
+            }
+            
+            // 确保至少有一个根节点存在
+            if (this.nodes.size === 0) {
+                console.log('撤销后没有节点，创建默认根节点');
+                const rootNode = this.createNode(400, 300, '中心主题', 'default');
+                this.selectNode(rootNode);
+            }
+            
+            // 更新所有节点样式
+            this.updateAllNodeStyles();
+            
+            console.log(`恢复状态: ${state.nodes.length}个节点，${state.connections.length}条连接`);
+            
+        } finally {
+            // 重置标志
+            this._isRestoringState = false;
         }
-        
-        // 更新所有节点样式
-        this.updateAllNodeStyles();
     }
     
     createNodeFromData(nodeData) {
@@ -983,7 +1024,8 @@ class MindMap {
             height: 40,
             children: [...nodeData.children],
             parent: nodeData.parent,
-            color: nodeData.color || 'default'
+            color: nodeData.color || 'default',
+            collapsed: nodeData.collapsed || false
         };
 
         // 创建SVG节点组
@@ -1014,15 +1056,43 @@ class MindMap {
         connectionPoint.setAttribute('cy', newNodeData.height / 2);
         connectionPoint.setAttribute('r', 4);
 
+        // 创建折叠展开指示器
+        const collapseIndicator = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        collapseIndicator.classList.add('collapse-indicator');
+        collapseIndicator.setAttribute('cx', newNodeData.width);
+        collapseIndicator.setAttribute('cy', newNodeData.height / 2);
+        collapseIndicator.setAttribute('r', 8);
+        collapseIndicator.setAttribute('fill', 'var(--accent-blue)');
+        collapseIndicator.setAttribute('stroke', 'white');
+        collapseIndicator.setAttribute('stroke-width', '2');
+        collapseIndicator.style.display = 'none';
+        
+        // 创建折叠指示符号
+        const collapseSymbol = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        collapseSymbol.classList.add('collapse-symbol');
+        collapseSymbol.setAttribute('x', newNodeData.width);
+        collapseSymbol.setAttribute('y', newNodeData.height / 2);
+        collapseSymbol.setAttribute('text-anchor', 'middle');
+        collapseSymbol.setAttribute('dominant-baseline', 'central');
+        collapseSymbol.setAttribute('font-size', '10');
+        collapseSymbol.setAttribute('font-weight', 'bold');
+        collapseSymbol.setAttribute('fill', 'white');
+        collapseSymbol.textContent = '-';
+        collapseSymbol.style.display = 'none';
+
         nodeGroup.appendChild(rect);
         nodeGroup.appendChild(textElement);
         nodeGroup.appendChild(connectionPoint);
-
-        // 添加事件监听器
-        this.setupNodeEventListeners(nodeGroup, newNodeData);
+        nodeGroup.appendChild(collapseIndicator);
+        nodeGroup.appendChild(collapseSymbol);
 
         this.updateNodePosition(nodeGroup, newNodeData);
         this.nodesLayer.appendChild(nodeGroup);
+
+        // 添加事件监听器 - 延迟执行避免元素未完全创建的问题
+        setTimeout(() => {
+            this.setupNodeEventListeners(nodeGroup, newNodeData, collapseIndicator, collapseSymbol);
+        }, 10);
 
         return newNodeData;
     }
