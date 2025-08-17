@@ -27,6 +27,9 @@ class MindMap {
         this.contextMenu = null;
         this.contextMenuTarget = null;
         
+        // 网格显示状态
+        this.showGrid = true;
+        
         this.init();
     }
 
@@ -74,6 +77,10 @@ class MindMap {
         
         document.getElementById('export-markdown-btn').addEventListener('click', () => {
             this.exportToMarkdown();
+        });
+        
+        document.getElementById('toggle-grid-btn').addEventListener('click', () => {
+            this.toggleGrid();
         });
 
         // SVG画布事件
@@ -1232,6 +1239,23 @@ class MindMap {
             current = parent;
         }
         return true;
+    }
+    
+    // 网格切换功能
+    toggleGrid() {
+        this.showGrid = !this.showGrid;
+        const canvasContainer = document.getElementById('canvas-container');
+        const gridBtn = document.getElementById('toggle-grid-btn');
+        
+        if (this.showGrid) {
+            canvasContainer.classList.remove('no-grid');
+            gridBtn.innerHTML = '<span>📐 网格</span>';
+            gridBtn.classList.remove('active');
+        } else {
+            canvasContainer.classList.add('no-grid');
+            gridBtn.innerHTML = '<span>📐 隐藏网格</span>';
+            gridBtn.classList.add('active');
+        }
     }
     
     // 数据序列化

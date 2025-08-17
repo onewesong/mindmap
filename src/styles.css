@@ -184,6 +184,12 @@ body {
   box-shadow: 0 1px 3px var(--shadow);
 }
 
+.toolbar-btn.active {
+  background-color: var(--accent-blue);
+  color: white;
+  border-color: var(--accent-blue);
+}
+
 /* 画布容器 */
 #canvas-container {
   flex: 1;
@@ -193,6 +199,11 @@ body {
   background-image: 
     radial-gradient(circle, var(--border-color) 1px, transparent 1px);
   background-size: 20px 20px;
+  transition: background-image 0.3s ease;
+}
+
+#canvas-container.no-grid {
+  background-image: none;
 }
 
 #mindmap-svg {
