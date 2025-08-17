@@ -81,6 +81,14 @@ if (process.platform === 'darwin') {
         },
         { type: 'separator' },
         {
+          label: '导入 Markdown',
+          accelerator: 'CmdOrCtrl+I',
+          click: () => {
+            // 发送导入Markdown事件到渲染进程
+            BrowserWindow.getFocusedWindow()?.webContents.send('menu-import-markdown');
+          }
+        },
+        {
           label: '导出为 Markdown',
           accelerator: 'CmdOrCtrl+E',
           click: () => {

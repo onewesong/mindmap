@@ -106,6 +106,9 @@
             </div>
 
             <div class="toolbar-group">
+                <button id="import-markdown-btn" class="toolbar-btn">
+                    <span>📥 导入MD</span>
+                </button>
                 <button id="export-markdown-btn" class="toolbar-btn">
                     <span>📄 导出MD</span>
                 </button>
@@ -159,6 +162,9 @@
             </div>
         </div>
     </div>
+
+    <!-- 隐藏的文件输入框 -->
+    <input type="file" id="markdown-file-input" accept=".md,.markdown,.txt" style="display: none;">
 
     <script src="mindmap.js"></script>
 </body>

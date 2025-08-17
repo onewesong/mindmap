@@ -68,6 +68,10 @@ class MindMap {
             this.redo();
         });
         
+        document.getElementById('import-markdown-btn').addEventListener('click', () => {
+            this.importFromMarkdown();
+        });
+        
         document.getElementById('export-markdown-btn').addEventListener('click', () => {
             this.exportToMarkdown();
         });
@@ -1111,6 +1115,219 @@ class MindMap {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
     }
+    
+    // Markdown导入功能
+    importFromMarkdown() {
+        const fileInput = document.getElementById('markdown-file-input');
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const markdownContent = event.target.result;
+                this.parseAndImportMarkdown(markdownContent);
+                // 重置文件输入
+                fileInput.value = '';
+            };
+            reader.readAsText(file);
+        };
+        fileInput.click();
+    }
+    
+    parseAndImportMarkdown(markdownContent) {
+        if (!markdownContent.trim()) {
+            alert('文件内容为空');
+            return;
+        }
+        
+        // 确认是否替换当前思维导图
+        if (this.nodes.size > 0) {
+            if (!confirm('导入Markdown将替换当前思维导图，确定要继续吗？')) {
+                return;
+            }
+        }
+        
+        // 清空现有内容
+        this.clearMindMap();
+        
+        const lines = markdownContent.split('\n');
+        const nodeStack = []; // 用于追踪层级关系
+        let rootNode = null;
+        let nodeIdCounter = 0;
+        
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+            
+            let text = '';
+            let level = 0;
+            
+            // 解析标题
+            const headerMatch = line.match(/^(#{1,6})\s+(.+)$/);
+            if (headerMatch) {
+                level = headerMatch[1].length; // # 的数量决定层级
+                text = headerMatch[2].trim();
+            }
+            // 解析列表项
+            else if (line.match(/^[\s]*[-*+]\s+(.+)$/)) {
+                const listMatch = line.match(/^(\s*)[-*+]\s+(.+)$/);
+                const indent = listMatch[1].length;
+                level = Math.floor(indent / 2) + 7; // 列表项从第7级开始
+                text = listMatch[2].trim();
+            }
+            // 解析有序列表
+            else if (line.match(/^[\s]*\d+\.\s+(.+)$/)) {
+                const orderedListMatch = line.match(/^(\s*)\d+\.\s+(.+)$/);
+                const indent = orderedListMatch[1].length;
+                level = Math.floor(indent / 2) + 7;
+                text = orderedListMatch[2].trim();
+            }
+            else {
+                // 跳过其他类型的行（代码块、引用等）
+                continue;
+            }
+            
+            if (!text) continue;
+            
+            // 创建节点
+            const nodeId = `imported-node-${nodeIdCounter++}`;
+            let nodeColor = 'default';
+            
+            // 根据层级分配颜色
+            if (level === 1) nodeColor = 'blue';
+            else if (level === 2) nodeColor = 'green';
+            else if (level === 3) nodeColor = 'orange';
+            else if (level === 4) nodeColor = 'purple';
+            else if (level === 5) nodeColor = 'red';
+            else if (level === 6) nodeColor = 'teal';
+            
+            // 计算节点位置
+            let x, y;
+            if (!rootNode) {
+                // 根节点位置
+                x = 400;
+                y = 300;
+                rootNode = { id: nodeId, level: level };
+            } else {
+                // 根据层级和顺序计算位置
+                const angle = (nodeIdCounter * Math.PI) / 6;
+                const distance = 150 + (level - 1) * 100;
+                x = 400 + Math.cos(angle) * distance;
+                y = 300 + Math.sin(angle) * distance;
+            }
+            
+            // 创建节点
+            const nodeData = this.createNode(x, y, text, nodeColor);
+            nodeData.id = nodeId;
+            this.nodes.set(nodeId, nodeData);
+            
+            // 建立层级关系
+            while (nodeStack.length > 0 && nodeStack[nodeStack.length - 1].level >= level) {
+                nodeStack.pop();
+            }
+            
+            if (nodeStack.length > 0) {
+                const parent = nodeStack[nodeStack.length - 1];
+                const parentNodeData = this.nodes.get(parent.id);
+                if (parentNodeData) {
+                    parentNodeData.children.push(nodeId);
+                    nodeData.parent = parent.id;
+                    this.createConnection(parent.id, nodeId);
+                }
+            }
+            
+            nodeStack.push({ id: nodeId, level: level });
+        }
+        
+        // 如果没有创建任何节点，创建默认根节点
+        if (this.nodes.size === 0) {
+            this.createRootNode();
+            alert('未能解析到有效的Markdown结构，已创建默认思维导图');
+            return;
+        }
+        
+        // 重新布局节点
+        this.layoutImportedNodes();
+        
+        // 更新所有节点样式
+        this.updateAllNodeStyles();
+        
+        // 选中根节点
+        if (rootNode) {
+            const rootNodeData = this.nodes.get(rootNode.id);
+            if (rootNodeData) {
+                this.selectNode(rootNodeData);
+            }
+        }
+        
+        // 保存状态
+        this.saveState();
+        
+        alert(`成功导入 ${this.nodes.size} 个节点的思维导图！`);
+    }
+    
+    clearMindMap() {
+        // 清空所有数据
+        this.nodes.clear();
+        this.connections = [];
+        this.selectedNode = null;
+        this.nodeCounter = 0;
+        
+        // 清空DOM
+        this.nodesLayer.innerHTML = '';
+        this.connectionsLayer.innerHTML = '';
+        
+        // 重置视图
+        this.scale = 1;
+        this.panX = 0;
+        this.panY = 0;
+        this.updateTransform();
+        
+        // 清空历史记录
+        this.history = [];
+        this.historyIndex = -1;
+        this.updateHistoryButtons();
+    }
+    
+    layoutImportedNodes() {
+        const rootNode = Array.from(this.nodes.values()).find(node => !node.parent);
+        if (!rootNode) return;
+        
+        // 使用简单的径向布局
+        const layoutNode = (nodeData, centerX, centerY, radius, startAngle, angleSpan) => {
+            nodeData.x = centerX;
+            nodeData.y = centerY;
+            
+            const nodeGroup = document.querySelector(`[data-node-id="${nodeData.id}"]`);
+            if (nodeGroup) {
+                this.updateNodePosition(nodeGroup, nodeData);
+            }
+            
+            if (nodeData.children && nodeData.children.length > 0) {
+                const childAngleStep = angleSpan / nodeData.children.length;
+                const childRadius = radius + 200;
+                
+                nodeData.children.forEach((childId, index) => {
+                    const childNode = this.nodes.get(childId);
+                    if (childNode) {
+                        const angle = startAngle + (index * childAngleStep) + (childAngleStep / 2);
+                        const childX = centerX + Math.cos(angle) * childRadius;
+                        const childY = centerY + Math.sin(angle) * childRadius;
+                        
+                        const childAngleSpan = childAngleStep * 0.8; // 给子节点留一些角度空间
+                        layoutNode(childNode, childX, childY, childRadius / 2, angle - childAngleSpan/2, childAngleSpan);
+                    }
+                });
+            }
+        };
+        
+        // 从根节点开始布局
+        layoutNode(rootNode, 400, 300, 100, 0, 2 * Math.PI);
+        
+        // 更新连接线
+        this.updateConnections();
+    }
 }
 
 // 初始化应用
@@ -1133,6 +1350,10 @@ if (typeof require !== 'undefined') {
         
         // 使用浏览器下载功能作为临时保存方案
         mindMap.downloadFile(data, 'mindmap.json', 'application/json');
+    });
+    
+    ipcRenderer.on('menu-import-markdown', () => {
+        mindMap.importFromMarkdown();
     });
     
     ipcRenderer.on('menu-export-markdown', () => {
