@@ -19,6 +19,10 @@ class MindMap {
         this.historyIndex = -1;
         this.maxHistorySize = 50;
         
+        // 右键菜单相关
+        this.contextMenu = null;
+        this.contextMenuTarget = null;
+        
         this.init();
     }
 
@@ -26,6 +30,7 @@ class MindMap {
         this.setupEventListeners();
         this.setupColorSystem();
         this.setupThemeSystem();
+        this.setupContextMenu();
         this.createRootNode();
     }
 
@@ -66,6 +71,12 @@ class MindMap {
             }
         });
 
+        // 阻止画布右键菜单
+        this.svg.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            this.hideContextMenu();
+        });
+
         // 键盘事件
         document.addEventListener('keydown', (e) => {
             // 如果当前有输入框在编辑，不处理快捷键
@@ -90,6 +101,8 @@ class MindMap {
             } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.key === 'z' && e.shiftKey))) {
                 e.preventDefault();
                 this.redo();
+            } else if (e.key === 'Escape') {
+                this.hideContextMenu();
             }
         });
 
@@ -181,9 +194,10 @@ class MindMap {
             });
         });
         
-        // 点击外部关闭下拉菜单
-        document.addEventListener('click', () => {
+        // 点击外部关闭下拉菜单和上下文菜单
+        document.addEventListener('click', (e) => {
             this.closeAllDropdowns();
+            this.hideContextMenu();
         });
     }
     
@@ -332,6 +346,14 @@ class MindMap {
         nodeGroup.addEventListener('click', (e) => {
             e.stopPropagation();
             this.selectNode(nodeData);
+        });
+
+        // 右键菜单
+        nodeGroup.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.selectNode(nodeData);
+            this.showContextMenu(e.clientX, e.clientY, nodeData);
         });
     }
 
@@ -767,6 +789,90 @@ class MindMap {
         if (redoBtn) {
             redoBtn.disabled = this.historyIndex >= this.history.length - 1;
             redoBtn.style.opacity = redoBtn.disabled ? '0.5' : '1';
+        }
+    }
+    
+    // 右键上下文菜单相关方法
+    setupContextMenu() {
+        this.contextMenu = document.getElementById('context-menu');
+        
+        // 菜单项点击事件
+        document.getElementById('menu-edit').addEventListener('click', () => {
+            this.hideContextMenu();
+            if (this.contextMenuTarget) {
+                this.editSelectedNode();
+            }
+        });
+        
+        document.getElementById('menu-add-child').addEventListener('click', () => {
+            this.hideContextMenu();
+            this.addChildNode();
+        });
+        
+        document.getElementById('menu-change-color').addEventListener('click', (e) => {
+            this.hideContextMenu();
+            // 触发颜色选择器
+            const colorBtn = document.getElementById('color-selector-btn');
+            const colorDropdown = document.getElementById('color-dropdown');
+            
+            if (this.selectedNode) {
+                this.closeAllDropdowns();
+                colorDropdown.classList.add('show');
+                colorBtn.classList.add('active');
+                this.updateActiveColor();
+            }
+        });
+        
+        document.getElementById('menu-delete').addEventListener('click', () => {
+            this.hideContextMenu();
+            this.deleteSelectedNode();
+        });
+    }
+    
+    showContextMenu(x, y, nodeData) {
+        this.contextMenuTarget = nodeData;
+        
+        // 更新菜单项状态
+        const deleteItem = document.getElementById('menu-delete');
+        const addChildItem = document.getElementById('menu-add-child');
+        const editItem = document.getElementById('menu-edit');
+        
+        // 根节点且是唯一节点时不能删除
+        if (this.nodes.size === 1) {
+            deleteItem.classList.add('disabled');
+        } else {
+            deleteItem.classList.remove('disabled');
+        }
+        
+        // 显示菜单
+        this.contextMenu.classList.add('show');
+        
+        // 调整菜单位置，确保不会超出屏幕
+        const menuRect = this.contextMenu.getBoundingClientRect();
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        
+        let adjustedX = x;
+        let adjustedY = y;
+        
+        // 防止菜单超出右边界
+        if (x + menuRect.width > viewportWidth) {
+            adjustedX = x - menuRect.width;
+        }
+        
+        // 防止菜单超出下边界
+        if (y + menuRect.height > viewportHeight) {
+            adjustedY = y - menuRect.height;
+        }
+        
+        this.contextMenu.style.left = `${Math.max(0, adjustedX)}px`;
+        this.contextMenu.style.top = `${Math.max(0, adjustedY)}px`;
+    }
+    
+    hideContextMenu() {
+        if (this.contextMenu) {
+            this.contextMenu.classList.remove('show');
+            this.contextMenuTarget = null;
         }
     }
 

@@ -127,6 +127,31 @@
                 <g id="nodes-layer"></g>
             </svg>
         </div>
+
+        <!-- 右键上下文菜单 -->
+        <div id="context-menu" class="context-menu">
+            <div class="menu-item" id="menu-edit">
+                <span class="menu-icon">✏️</span>
+                <span class="menu-text">编辑文本</span>
+                <span class="menu-shortcut">Enter</span>
+            </div>
+            <div class="menu-item" id="menu-add-child">
+                <span class="menu-icon">➕</span>
+                <span class="menu-text">添加子节点</span>
+                <span class="menu-shortcut">Tab</span>
+            </div>
+            <div class="menu-divider"></div>
+            <div class="menu-item" id="menu-change-color">
+                <span class="menu-icon">🎨</span>
+                <span class="menu-text">更改颜色</span>
+            </div>
+            <div class="menu-divider"></div>
+            <div class="menu-item menu-danger" id="menu-delete">
+                <span class="menu-icon">🗑️</span>
+                <span class="menu-text">删除节点</span>
+                <span class="menu-shortcut">Del</span>
+            </div>
+        </div>
     </div>
 
     <script src="mindmap.js"></script>
