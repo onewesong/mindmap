@@ -212,33 +212,111 @@ body {
 }
 
 .mindmap-node:hover .node-bg {
-  stroke: var(--accent-blue);
   stroke-width: 2;
   filter: drop-shadow(0 4px 8px var(--shadow-hover));
 }
 
 .mindmap-node.selected .node-bg {
-  stroke: var(--node-selected);
-  stroke-width: 2;
+  stroke-width: 3;
   filter: drop-shadow(0 4px 12px rgba(0, 122, 255, 0.3));
 }
 
 .node-bg {
-  fill: var(--node-bg);
-  stroke: var(--node-border);
   stroke-width: 1;
   filter: drop-shadow(0 2px 4px var(--shadow));
   transition: all 0.2s ease;
 }
 
 .node-text {
-  fill: var(--node-text);
   text-anchor: middle;
   dominant-baseline: central;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
   font-weight: 500;
   pointer-events: none;
+}
+
+/* 节点颜色类别 */
+.node-color-blue .node-bg {
+  fill: #e3f2fd !important;
+  stroke: #2196f3 !important;
+}
+
+.node-color-blue .node-text {
+  fill: #1565c0 !important;
+}
+
+.node-color-green .node-bg {
+  fill: #e8f5e8 !important;
+  stroke: #4caf50 !important;
+}
+
+.node-color-green .node-text {
+  fill: #2e7d32 !important;
+}
+
+.node-color-orange .node-bg {
+  fill: #fff3e0 !important;
+  stroke: #ff9800 !important;
+}
+
+.node-color-orange .node-text {
+  fill: #e65100 !important;
+}
+
+.node-color-purple .node-bg {
+  fill: #f3e5f5 !important;
+  stroke: #9c27b0 !important;
+}
+
+.node-color-purple .node-text {
+  fill: #6a1b9a !important;
+}
+
+.node-color-red .node-bg {
+  fill: #ffebee !important;
+  stroke: #f44336 !important;
+}
+
+.node-color-red .node-text {
+  fill: #c62828 !important;
+}
+
+.node-color-teal .node-bg {
+  fill: #e0f2f1 !important;
+  stroke: #009688 !important;
+}
+
+.node-color-teal .node-text {
+  fill: #00695c !important;
+}
+
+.node-color-yellow .node-bg {
+  fill: #fffde7 !important;
+  stroke: #ffc107 !important;
+}
+
+.node-color-yellow .node-text {
+  fill: #f57f17 !important;
+}
+
+.node-color-pink .node-bg {
+  fill: #fce4ec !important;
+  stroke: #e91e63 !important;
+}
+
+.node-color-pink .node-text {
+  fill: #ad1457 !important;
+}
+
+/* 默认节点颜色（根据主题） */
+.node-color-default .node-bg {
+  fill: var(--node-bg);
+  stroke: var(--node-border);
+}
+
+.node-color-default .node-text {
+  fill: var(--node-text);
 }
 
 .node-input {
@@ -446,6 +524,133 @@ body {
     left: 0;
     min-width: 160px;
   }
+}
+
+/* 颜色选择器样式 */
+.color-selector-container {
+  position: relative;
+  display: inline-block;
+}
+
+.color-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: var(--secondary-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px var(--shadow-hover);
+  min-width: 140px;
+  z-index: 1000;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.color-dropdown.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.color-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 8px;
+  margin: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+
+.color-option:hover {
+  background-color: var(--tertiary-bg);
+  transform: translateX(2px);
+}
+
+.color-option.active {
+  background-color: var(--accent-blue);
+  color: white;
+}
+
+.color-preview {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 1px 3px var(--shadow);
+}
+
+/* 颜色预览样式 */
+.default-color {
+  background: linear-gradient(45deg, var(--node-bg) 50%, var(--node-border) 50%);
+}
+
+.blue-color {
+  background: linear-gradient(45deg, #e3f2fd 50%, #2196f3 50%);
+}
+
+.green-color {
+  background: linear-gradient(45deg, #e8f5e8 50%, #4caf50 50%);
+}
+
+.orange-color {
+  background: linear-gradient(45deg, #fff3e0 50%, #ff9800 50%);
+}
+
+.purple-color {
+  background: linear-gradient(45deg, #f3e5f5 50%, #9c27b0 50%);
+}
+
+.red-color {
+  background: linear-gradient(45deg, #ffebee 50%, #f44336 50%);
+}
+
+.teal-color {
+  background: linear-gradient(45deg, #e0f2f1 50%, #009688 50%);
+}
+
+.yellow-color {
+  background: linear-gradient(45deg, #fffde7 50%, #ffc107 50%);
+}
+
+.pink-color {
+  background: linear-gradient(45deg, #fce4ec 50%, #e91e63 50%);
+}
+
+.color-btn {
+  position: relative;
+}
+
+.color-btn::after {
+  content: '';
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid currentColor;
+  transition: transform 0.2s ease;
+}
+
+.color-btn.active::after {
+  transform: translateY(-50%) rotate(180deg);
+}
+
+/* 颜色选择器禁用状态 */
+.color-selector-container.disabled {
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 /* 滚动条样式 (Webkit) */

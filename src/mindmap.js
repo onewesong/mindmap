@@ -19,6 +19,7 @@ class MindMap {
 
     init() {
         this.setupEventListeners();
+        this.setupColorSystem();
         this.setupThemeSystem();
         this.createRootNode();
     }
@@ -70,6 +71,50 @@ class MindMap {
         });
     }
 
+    setupColorSystem() {
+        const colorBtn = document.getElementById('color-selector-btn');
+        const colorDropdown = document.getElementById('color-dropdown');
+        const colorOptions = document.querySelectorAll('.color-option');
+        const colorContainer = document.querySelector('.color-selector-container');
+        
+        // 颜色按钮点击事件
+        colorBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            
+            // 检查是否有选中的节点
+            if (!this.selectedNode) {
+                return;
+            }
+            
+            const isShow = colorDropdown.classList.contains('show');
+            this.closeAllDropdowns();
+            
+            if (!isShow) {
+                colorDropdown.classList.add('show');
+                colorBtn.classList.add('active');
+                this.updateActiveColor();
+            }
+        });
+        
+        // 颜色选项点击事件
+        colorOptions.forEach(option => {
+            option.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const color = option.getAttribute('data-color');
+                
+                if (this.selectedNode) {
+                    this.setNodeColor(this.selectedNode, color);
+                    this.updateActiveColor();
+                }
+                
+                this.closeAllDropdowns();
+            });
+        });
+        
+        // 更新颜色选择器状态
+        this.updateColorSelectorState();
+    }
+    
     setupThemeSystem() {
         const themeBtn = document.getElementById('theme-selector-btn');
         const themeDropdown = document.getElementById('theme-dropdown');
@@ -130,21 +175,27 @@ class MindMap {
     }
     
     closeAllDropdowns() {
-        document.querySelectorAll('.theme-dropdown').forEach(dropdown => {
+        document.querySelectorAll('.theme-dropdown, .color-dropdown').forEach(dropdown => {
             dropdown.classList.remove('show');
         });
-        document.querySelectorAll('.theme-btn').forEach(btn => {
+        document.querySelectorAll('.theme-btn, .color-btn').forEach(btn => {
             btn.classList.remove('active');
         });
     }
 
     createRootNode() {
-        const node = this.createNode(400, 300, '中心主题');
+        const node = this.createNode(400, 300, '中心主题', 'default');
         this.selectNode(node);
     }
 
-    createNode(x, y, text = '新节点') {
+    createNode(x, y, text = '新节点', color = null) {
         const nodeId = `node-${this.nodeCounter++}`;
+        
+        // 如果没有指定颜色，根据层级自动分配颜色
+        if (color === null) {
+            color = this.getAutoColor();
+        }
+        
         const nodeData = {
             id: nodeId,
             x: x,
@@ -153,12 +204,14 @@ class MindMap {
             width: 120,
             height: 40,
             children: [],
-            parent: null
+            parent: null,
+            color: color
         };
 
         // 创建SVG节点组
         const nodeGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         nodeGroup.classList.add('mindmap-node');
+        nodeGroup.classList.add(`node-color-${nodeData.color}`);
         nodeGroup.setAttribute('data-node-id', nodeId);
 
         // 创建半圆角矩形背景
@@ -292,6 +345,10 @@ class MindMap {
         if (nodeGroup) {
             nodeGroup.classList.add('selected');
         }
+        
+        // 更新颜色选择器状态
+        this.updateColorSelectorState();
+        this.updateActiveColor();
     }
 
     deselectAllNodes() {
@@ -299,6 +356,9 @@ class MindMap {
         document.querySelectorAll('.mindmap-node.selected').forEach(node => {
             node.classList.remove('selected');
         });
+        
+        // 更新颜色选择器状态
+        this.updateColorSelectorState();
     }
 
     addChildNode() {
@@ -313,7 +373,9 @@ class MindMap {
         const childX = parentNode.x + Math.cos(angle) * distance;
         const childY = parentNode.y + Math.sin(angle) * distance;
 
-        const childNode = this.createNode(childX, childY, '子节点');
+        // 为子节点分配下一个颜色
+        const nextColor = this.getNextLevelColor(parentNode.color);
+        const childNode = this.createNode(childX, childY, '子节点', nextColor);
         
         // 建立父子关系
         parentNode.children.push(childNode.id);
@@ -456,6 +518,53 @@ class MindMap {
         this.nodesLayer.setAttribute('transform', transform);
         this.connectionsLayer.setAttribute('transform', transform);
     }
+    
+    // 节点颜色相关方法
+    getAutoColor() {
+        const colors = ['blue', 'green', 'orange', 'purple', 'red', 'teal', 'yellow', 'pink'];
+        return colors[this.nodes.size % colors.length];
+    }
+    
+    getNextLevelColor(parentColor) {
+        const colors = ['blue', 'green', 'orange', 'purple', 'red', 'teal', 'yellow', 'pink'];
+        const parentIndex = colors.indexOf(parentColor);
+        if (parentIndex === -1) return colors[0];
+        return colors[(parentIndex + 1) % colors.length];
+    }
+    
+    setNodeColor(nodeData, color) {
+        nodeData.color = color;
+        
+        const nodeGroup = document.querySelector(`[data-node-id="${nodeData.id}"]`);
+        if (nodeGroup) {
+            // 移除所有颜色类
+            const colorClasses = ['node-color-default', 'node-color-blue', 'node-color-green', 
+                                'node-color-orange', 'node-color-purple', 'node-color-red', 
+                                'node-color-teal', 'node-color-yellow', 'node-color-pink'];
+            colorClasses.forEach(cls => nodeGroup.classList.remove(cls));
+            
+            // 添加新颜色类
+            nodeGroup.classList.add(`node-color-${color}`);
+        }
+    }
+    
+    updateColorSelectorState() {
+        const colorContainer = document.querySelector('.color-selector-container');
+        if (this.selectedNode) {
+            colorContainer.classList.remove('disabled');
+        } else {
+            colorContainer.classList.add('disabled');
+        }
+    }
+    
+    updateActiveColor() {
+        document.querySelectorAll('.color-option').forEach(option => {
+            option.classList.remove('active');
+            if (this.selectedNode && option.getAttribute('data-color') === this.selectedNode.color) {
+                option.classList.add('active');
+            }
+        });
+    }
 
     // 数据序列化
     exportData() {
@@ -466,7 +575,8 @@ class MindMap {
                 y: node.y,
                 text: node.text,
                 children: node.children,
-                parent: node.parent
+                parent: node.parent,
+                color: node.color
             })),
             connections: this.connections,
             scale: this.scale,
@@ -490,7 +600,7 @@ class MindMap {
             
             // 重建节点
             data.nodes.forEach(nodeData => {
-                const node = this.createNode(nodeData.x, nodeData.y, nodeData.text);
+                const node = this.createNode(nodeData.x, nodeData.y, nodeData.text, nodeData.color || 'default');
                 node.id = nodeData.id;
                 node.children = nodeData.children || [];
                 node.parent = nodeData.parent;
