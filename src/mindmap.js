@@ -276,6 +276,10 @@ class MindMap {
     createRootNode() {
         const node = this.createNode(400, 300, '中心主题', 'default');
         this.selectNode(node);
+        // 更新节点样式（根节点特殊处理）
+        setTimeout(() => {
+            this.updateNodeStyle(node);
+        }, 10);
         // 保存初始状态
         this.saveState();
     }
@@ -492,8 +496,11 @@ class MindMap {
         // 创建连接线
         this.createConnection(parentNode.id, childNode.id);
         
-        // 更新父节点样式（可能从叶子节点变成分支节点）
-        this.updateNodeStyle(parentNode);
+        // 更新节点样式（延迟执行确保DOM已更新）
+        setTimeout(() => {
+            this.updateNodeStyle(parentNode);
+            this.updateNodeStyle(childNode);
+        }, 10);
         
         this.selectNode(childNode);
         
@@ -638,6 +645,126 @@ class MindMap {
         const transform = `translate(${this.panX}, ${this.panY}) scale(${this.scale})`;
         this.nodesLayer.setAttribute('transform', transform);
         this.connectionsLayer.setAttribute('transform', transform);
+    }
+    
+    // 节点样式和层级相关方法
+    getNodeLevel(nodeData) {
+        let level = 0;
+        let current = nodeData;
+        
+        // 向上追溯到根节点计算层级
+        while (current.parent) {
+            level++;
+            current = this.nodes.get(current.parent);
+            if (!current) break;
+        }
+        
+        return level;
+    }
+    
+    updateNodeStyle(nodeData) {
+        if (!nodeData) {
+            console.warn('updateNodeStyle: nodeData is null');
+            return;
+        }
+        
+        const level = this.getNodeLevel(nodeData);
+        const isLeafNode = nodeData.children.length === 0;
+        const nodeGroup = document.querySelector(`[data-node-id="${nodeData.id}"]`);
+        
+        if (!nodeGroup) {
+            console.warn(`updateNodeStyle: 找不到节点DOM元素 ${nodeData.id}`);
+            return;
+        }
+        
+        const rect = nodeGroup.querySelector('.node-bg');
+        const text = nodeGroup.querySelector('.node-text');
+        
+        if (!rect || !text) {
+            console.warn(`updateNodeStyle: 找不到节点子元素 ${nodeData.id}`);
+            return;
+        }
+        
+        // 根据层级设置不同大小
+        let width, height, fontSize, fontWeight;
+        switch (level) {
+            case 0: // 根节点
+                width = 180;
+                height = 60;
+                fontSize = 18;
+                fontWeight = '700';
+                break;
+            case 1: // 第一级子节点
+                width = 150;
+                height = 50;
+                fontSize = 16;
+                fontWeight = '600';
+                break;
+            case 2: // 第二级子节点
+                width = 130;
+                height = 45;
+                fontSize = 15;
+                fontWeight = '500';
+                break;
+            case 3: // 第三级子节点
+                width = 110;
+                height = 40;
+                fontSize = 14;
+                fontWeight = '500';
+                break;
+            default: // 更深层级
+                width = 100;
+                height = 35;
+                fontSize = 13;
+                fontWeight = '400';
+                break;
+        }
+        
+        console.log(`更新节点 ${nodeData.id} 样式: 层级${level}, 大小${width}x${height}`);
+        
+        // 更新节点数据
+        nodeData.width = width;
+        nodeData.height = height;
+        
+        // 更新矩形大小
+        rect.setAttribute('width', width);
+        rect.setAttribute('height', height);
+        
+        // 更新文本样式
+        text.setAttribute('x', width / 2);
+        text.setAttribute('y', height / 2);
+        text.setAttribute('font-size', fontSize);
+        text.setAttribute('font-weight', fontWeight);
+        
+        // 叶子节点特殊处理
+        if (isLeafNode && level > 0) {
+            rect.style.opacity = '0.3';
+            text.style.fontStyle = 'italic';
+            nodeGroup.classList.add('leaf-node');
+        } else {
+            rect.style.opacity = '1';
+            text.style.fontStyle = 'normal';
+            nodeGroup.classList.remove('leaf-node');
+        }
+        
+        // 更新连接点位置
+        const connectionPoint = nodeGroup.querySelector('.connection-point');
+        if (connectionPoint) {
+            connectionPoint.setAttribute('cx', width);
+            connectionPoint.setAttribute('cy', height / 2);
+        }
+        
+        // 重新定位节点
+        this.updateNodePosition(nodeGroup, nodeData);
+    }
+    
+    updateAllNodeStyles() {
+        // 更新所有节点的样式
+        this.nodes.forEach(nodeData => {
+            this.updateNodeStyle(nodeData);
+        });
+        // 更新连接线
+        this.updateConnections();
     }
     
     // 节点颜色相关方法
