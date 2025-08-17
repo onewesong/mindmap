@@ -486,7 +486,10 @@ class MindMap {
                 this.saveState();
             }
             
-            document.body.removeChild(input);
+            // 安全地移除输入框
+            if (input.parentNode) {
+                input.parentNode.removeChild(input);
+            }
         };
 
         input.addEventListener('blur', finishEdit);
@@ -495,7 +498,10 @@ class MindMap {
             if (e.key === 'Enter') {
                 finishEdit();
             } else if (e.key === 'Escape') {
-                document.body.removeChild(input);
+                // 安全地移除输入框
+                if (input.parentNode) {
+                    input.parentNode.removeChild(input);
+                }
             }
         });
     }
