@@ -987,7 +987,10 @@ class MindMap {
         document.getElementById('menu-edit').addEventListener('click', () => {
             this.hideContextMenu();
             if (this.contextMenuTarget) {
-                this.editSelectedNode();
+                const nodeGroup = document.querySelector(`[data-node-id="${this.contextMenuTarget.id}"]`);
+                if (nodeGroup) {
+                    this.editNodeText(nodeGroup, this.contextMenuTarget);
+                }
             }
         });
         
@@ -1004,9 +1007,12 @@ class MindMap {
             
             if (this.selectedNode) {
                 this.closeAllDropdowns();
-                colorDropdown.classList.add('show');
-                colorBtn.classList.add('active');
-                this.updateActiveColor();
+                // 延迟显示颜色选择器，确保右键菜单已关闭
+                setTimeout(() => {
+                    colorDropdown.classList.add('show');
+                    colorBtn.classList.add('active');
+                    this.updateActiveColor();
+                }, 100);
             }
         });
         
