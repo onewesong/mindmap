@@ -14,6 +14,10 @@ class MindMap {
         this.panX = 0;
         this.panY = 0;
         
+        // 画布拖拽相关
+        this.isPanning = false;
+        this.panStart = { x: 0, y: 0 };
+        
         // 历史记录系统
         this.history = [];
         this.historyIndex = -1;
@@ -75,6 +79,38 @@ class MindMap {
         this.svg.addEventListener('contextmenu', (e) => {
             e.preventDefault();
             this.hideContextMenu();
+        });
+
+        // 画布拖拽事件
+        this.svg.addEventListener('mousedown', (e) => {
+            if (e.target === this.svg && e.button === 0) { // 只响应左键
+                this.isPanning = true;
+                this.panStart = { x: e.clientX, y: e.clientY };
+                this.svg.classList.add('dragging');
+                e.preventDefault();
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (this.isPanning) {
+                const deltaX = e.clientX - this.panStart.x;
+                const deltaY = e.clientY - this.panStart.y;
+                
+                this.panX += deltaX;
+                this.panY += deltaY;
+                
+                this.updateTransform();
+                
+                this.panStart = { x: e.clientX, y: e.clientY };
+                e.preventDefault();
+            }
+        });
+
+        document.addEventListener('mouseup', (e) => {
+            if (this.isPanning) {
+                this.isPanning = false;
+                this.svg.classList.remove('dragging');
+            }
         });
 
         // 键盘事件
