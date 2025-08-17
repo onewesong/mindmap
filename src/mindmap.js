@@ -67,6 +67,10 @@ class MindMap {
         document.getElementById('redo-btn').addEventListener('click', () => {
             this.redo();
         });
+        
+        document.getElementById('export-markdown-btn').addEventListener('click', () => {
+            this.exportToMarkdown();
+        });
 
         // SVG画布事件
         this.svg.addEventListener('click', (e) => {
@@ -978,6 +982,135 @@ class MindMap {
             console.error('导入数据失败:', error);
         }
     }
+    
+    // Markdown导出功能
+    exportToMarkdown() {
+        // 找到根节点
+        const rootNode = Array.from(this.nodes.values()).find(node => !node.parent);
+        if (!rootNode) {
+            console.error('未找到根节点');
+            return;
+        }
+        
+        let markdown = '';
+        
+        // 添加标题和说明
+        markdown += `# ${rootNode.text}\n\n`;
+        markdown += `> 此思维导图由 MindMap 应用生成\n`;
+        markdown += `> 生成时间: ${new Date().toLocaleString('zh-CN')}\n\n`;
+        
+        // 递归生成子节点的Markdown
+        const generateMarkdown = (nodeId, level = 1) => {
+            const node = this.nodes.get(nodeId);
+            if (!node) return '';
+            
+            let result = '';
+            
+            // 为子节点生成标题或列表项
+            if (level <= 6) {
+                // 使用标题格式 (H1-H6)
+                const headerLevel = Math.min(level, 6);
+                const headerPrefix = '#'.repeat(headerLevel);
+                result += `${headerPrefix} ${node.text}\n\n`;
+            } else {
+                // 深层级使用列表格式
+                const indent = '  '.repeat(level - 7);
+                result += `${indent}- ${node.text}\n`;
+            }
+            
+            // 如果有子节点，按顺序处理
+            if (node.children && node.children.length > 0) {
+                // 对子节点进行排序 (可选：按创建顺序或位置排序)
+                const sortedChildren = [...node.children];
+                
+                for (const childId of sortedChildren) {
+                    result += generateMarkdown(childId, level + 1);
+                }
+                
+                // 在标题后添加空行
+                if (level <= 6) {
+                    result += '\n';
+                }
+            }
+            
+            return result;
+        };
+        
+        // 生成子节点内容
+        if (rootNode.children && rootNode.children.length > 0) {
+            for (const childId of rootNode.children) {
+                markdown += generateMarkdown(childId, 1);
+            }
+        }
+        
+        // 添加脚注
+        markdown += '\n---\n\n';
+        markdown += '*本文档由思维导图自动生成*\n';
+        
+        // 下载Markdown文件
+        this.downloadFile(markdown, 'mindmap.md', 'text/markdown');
+    }
+    
+    // 树形结构导出 (可选的导出格式)
+    exportToMarkdownTree() {
+        const rootNode = Array.from(this.nodes.values()).find(node => !node.parent);
+        if (!rootNode) {
+            console.error('未找到根节点');
+            return;
+        }
+        
+        let markdown = `# ${rootNode.text}\n\n`;
+        
+        const generateTree = (nodeId, prefix = '', isLast = true) => {
+            const node = this.nodes.get(nodeId);
+            if (!node) return '';
+            
+            let result = '';
+            const connector = isLast ? '└── ' : '├── ';
+            result += `${prefix}${connector}${node.text}\n`;
+            
+            if (node.children && node.children.length > 0) {
+                const nextPrefix = prefix + (isLast ? '    ' : '│   ');
+                
+                for (let i = 0; i < node.children.length; i++) {
+                    const childId = node.children[i];
+                    const isLastChild = i === node.children.length - 1;
+                    result += generateTree(childId, nextPrefix, isLastChild);
+                }
+            }
+            
+            return result;
+        };
+        
+        markdown += '```\n';
+        markdown += `${rootNode.text}\n`;
+        
+        if (rootNode.children && rootNode.children.length > 0) {
+            for (let i = 0; i < rootNode.children.length; i++) {
+                const childId = rootNode.children[i];
+                const isLast = i === rootNode.children.length - 1;
+                markdown += generateTree(childId, '', isLast);
+            }
+        }
+        
+        markdown += '```\n';
+        
+        this.downloadFile(markdown, 'mindmap-tree.md', 'text/markdown');
+    }
+    
+    // 文件下载工具函数
+    downloadFile(content, filename, mimeType) {
+        const blob = new Blob([content], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
 }
 
 // 初始化应用
@@ -999,12 +1132,10 @@ if (typeof require !== 'undefined') {
         console.log('保存数据:', data);
         
         // 使用浏览器下载功能作为临时保存方案
-        const blob = new Blob([data], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'mindmap.json';
-        a.click();
-        URL.revokeObjectURL(url);
+        mindMap.downloadFile(data, 'mindmap.json', 'application/json');
+    });
+    
+    ipcRenderer.on('menu-export-markdown', () => {
+        mindMap.exportToMarkdown();
     });
 }

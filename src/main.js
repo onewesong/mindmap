@@ -78,6 +78,15 @@ if (process.platform === 'darwin') {
             // 发送保存事件到渲染进程
             BrowserWindow.getFocusedWindow()?.webContents.send('menu-save');
           }
+        },
+        { type: 'separator' },
+        {
+          label: '导出为 Markdown',
+          accelerator: 'CmdOrCtrl+E',
+          click: () => {
+            // 发送导出Markdown事件到渲染进程
+            BrowserWindow.getFocusedWindow()?.webContents.send('menu-export-markdown');
+          }
         }
       ]
     },
