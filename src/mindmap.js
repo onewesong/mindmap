@@ -395,6 +395,10 @@ class MindMap {
 
         // 创建连接线
         this.createConnection(parentNode.id, childNode.id);
+        
+        // 更新父节点样式（可能从叶子节点变成分支节点）
+        this.updateNodeStyle(parentNode);
+        
         this.selectNode(childNode);
     }
 
@@ -472,6 +476,9 @@ class MindMap {
         // 从节点集合中删除
         this.nodes.delete(nodeId);
         this.selectedNode = null;
+        
+        // 更新所有节点样式（删除节点后层级可能发生变化）
+        this.updateAllNodeStyles();
     }
 
     deleteNodeById(nodeId) {
@@ -636,6 +643,9 @@ class MindMap {
                 this.updateActiveTheme(data.theme);
                 localStorage.setItem('mindmap-theme', data.theme);
             }
+            
+            // 更新所有节点样式
+            this.updateAllNodeStyles();
             
         } catch (error) {
             console.error('导入数据失败:', error);

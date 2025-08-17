@@ -653,6 +653,34 @@ body {
   pointer-events: none;
 }
 
+/* 叶子节点特殊样式 */
+.leaf-node {
+  cursor: pointer;
+}
+
+.leaf-node .node-text {
+  font-style: italic;
+  opacity: 0.9;
+}
+
+.leaf-node:hover .node-text {
+  opacity: 1;
+  font-weight: 500 !important;
+}
+
+/* 根节点特殊样式 */
+.mindmap-node .node-text[font-size="16"] {
+  font-weight: 600;
+}
+
+/* 不同层级节点的hover效果 */
+.mindmap-node:hover .connection-point {
+  opacity: 1;
+  fill: var(--accent-blue);
+  transform: scale(1.2);
+  transition: all 0.2s ease;
+}
+
 /* 滚动条样式 (Webkit) */
 ::-webkit-scrollbar {
   width: 8px;
