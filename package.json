@@ -18,7 +18,8 @@
   "license": "MIT",
   "devDependencies": {
     "electron": "^27.0.0",
-    "electron-builder": "^24.6.4"
+    "electron-builder": "^24.6.4",
+    "electron-icon-builder": "^2.0.1"
   },
   "build": {
     "appId": "com.mindmap.electron",
@@ -29,6 +30,16 @@
     "files": [
       "src/**/*",
       "node_modules/**/*"
-    ]
+    ],
+    "icon": "src/icons/icons/png/256x256.png",
+    "mac": {
+      "icon": "src/icons/icons/mac/icon.icns"
+    },
+    "win": {
+      "icon": "src/icons/icons/win/icon.ico"
+    },
+    "linux": {
+      "icon": "src/icons/icons/png"
+    }
   }
 }

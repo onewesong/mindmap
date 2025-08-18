@@ -14,7 +14,8 @@ function createWindow() {
       enableRemoteModule: true
     },
     titleBarStyle: 'hiddenInset', // Mac风格标题栏
-    backgroundColor: '#f5f5f7' // Mac风格背景色
+    backgroundColor: '#f5f5f7', // Mac风格背景色
+    icon: path.join(__dirname, 'icons/icons/png/256x256.png') // 应用图标
   });
 
   win.loadFile('src/index.html');
