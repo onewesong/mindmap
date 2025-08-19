@@ -1,7 +1,7 @@
 {
   "name": "mindmap-electron",
-  "version": "1.0.0",
-  "description": "一个使用Electron开发的思维导图应用",
+  "version": "1.0.1",
+  "description": "跨平台的思维导图APP",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
