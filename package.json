@@ -39,12 +39,19 @@
       "icon": "src/icons/icons/win/icon.ico"
     },
     "linux": {
-      "icon": "src/icons/icons/png"
+      "icon": "src/icons/icons/png",
+      "category": "Office",
+      "target": [
+        "AppImage",
+        "deb"
+      ]
     },
     "publish": [
       {
         "provider": "github",
-        "releaseType": "release"
+        "releaseType": "release",
+        "owner": "onewesong",
+        "repo": "mindmap"
       }
     ]
   }
