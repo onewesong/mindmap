@@ -14,7 +14,10 @@
     "electron",
     "思维导图"
   ],
-  "author": "",
+  "author": {
+    "name": "onewesong",
+    "email": "onewesong@gmail.com"
+  },
   "license": "MIT",
   "devDependencies": {
     "electron": "^27.0.0",
@@ -41,6 +44,7 @@
     "linux": {
       "icon": "src/icons/icons/png",
       "category": "Office",
+      "maintainer": "onewesong <onewesong@gmail.com>",
       "target": [
         "AppImage",
         "deb"
