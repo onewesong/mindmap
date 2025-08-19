@@ -40,6 +40,12 @@
     },
     "linux": {
       "icon": "src/icons/icons/png"
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "releaseType": "release"
+      }
+    ]
   }
 }
