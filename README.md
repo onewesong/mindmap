@@ -1,6 +1,8 @@
 # 思维导图应用
 
-![Logo](src/icons/logo.png)
+<div align="center">
+  <img src="src/icons/logo.png" alt="Mind Map Logo" width="100">
+</div>
 
 一个使用 Electron 开发的现代化思维导图应用，采用 Mac 风格设计。
 
